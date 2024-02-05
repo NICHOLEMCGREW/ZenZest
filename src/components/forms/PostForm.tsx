@@ -11,27 +11,33 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+} from "@/components/ui/form";
+import {
   Button,
+} from "@/components/ui/button";
+import {
   Input,
+} from "@/components/ui/input";
+import {
   Textarea,
-} from "@/components/ui";
+} from "@/components/ui/textarea";
+
 import { PostValidation } from "@/lib/validation";
 import { useToast } from "@/components/ui/use-toast";
 import { useUserContext } from "@/context/AuthContext";
-import { FileUploader } from "@/components/shared";
-import { useCreatePost } from "@/lib/react-query/queries";
-// import { Form } from "../ui/form";
- 
-type PostFormProps = {
-    post?: Models.Document;
-}
+import FileUploader from "@/components/shared/FileUploader";
+import Loader from "../shared/Loader";
+import { useCreatePost, useUpdatePost } from "@/lib/react-query/queries";
 
-const PostForm = ({ post }: PostFormProps) => {
+type PostFormProps = {
+  post?: Models.Document;
+  action: "Create" | "Update";
+};
+
+const PostForm = ({ post, action }: PostFormProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useUserContext();
-  
-  // 1. Define your form.
   const form = useForm<z.infer<typeof PostValidation>>({
     resolver: zodResolver(PostValidation),
     defaultValues: {
@@ -41,32 +47,51 @@ const PostForm = ({ post }: PostFormProps) => {
       tags: post ? post.tags.join(",") : "",
     },
   });
-  
-   // Query
-   const { mutateAsync: createPost, isPending: isLoadingCreate } =
-   useCreatePost();
 
-  // 2. Define a submit handler.
-  async function onSubmit(values: z.infer<typeof PostValidation>) {
-    const newPost = await createPost({
-        ...values, 
-        userId: user.id,
-    })
+  // Query
+  const { mutateAsync: createPost, isPending: isLoadingCreate } =
+    useCreatePost();
+  const { mutateAsync: updatePost, isPending: isLoadingUpdate } =
+    useUpdatePost();
 
-    if(!newPost) {
+  // Handler
+  const handleSubmit = async (value: z.infer<typeof PostValidation>) => {
+    // ACTION = UPDATE
+    if (post && action === "Update") {
+      const updatedPost = await updatePost({
+        ...value,
+        postId: post.$id,
+        imageId: post.imageId,
+        imageUrl: post.imageUrl,
+      });
+
+      if (!updatedPost) {
         toast({
-            title: 'Please try again',
-        })
+          title: `${action} post failed. Please try again.`,
+        });
+      }
+      return navigate(`/posts/${post.$id}`);
     }
 
-    navigate('/');
+    // ACTION = CREATE
+    const newPost = await createPost({
+      ...value,
+      userId: user.id,
+    });
+
+    if (!newPost) {
+      toast({
+        title: `${action} post failed. Please try again.`,
+      });
+    }
+    navigate("/");
   };
 
   return (
     <Form {...form}>
       <form
-      onSubmit={form.handleSubmit(onSubmit)} 
-      className="flex flex-col gap-9 w-full max-w-5xl">
+        onSubmit={form.handleSubmit(handleSubmit)}
+        className="flex flex-col gap-9 w-full  max-w-5xl">
         <FormField
           control={form.control}
           name="caption"
@@ -74,9 +99,12 @@ const PostForm = ({ post }: PostFormProps) => {
             <FormItem>
               <FormLabel className="shad-form_label">Caption</FormLabel>
               <FormControl>
-                <Textarea className="shad-textarea custom-scrollbar" {...field} />
+                <Textarea
+                  className="shad-textarea custom-scrollbar"
+                  {...field}
+                />
               </FormControl>
-              <FormMessage  className="shad-form_message"/>
+              <FormMessage className="shad-form_message" />
             </FormItem>
           )}
         />
@@ -89,11 +117,11 @@ const PostForm = ({ post }: PostFormProps) => {
               <FormLabel className="shad-form_label">Add Photos</FormLabel>
               <FormControl>
                 <FileUploader
-                fieldChange={field.onChange}
-                mediaUrl={post?.imageUrl}
+                  fieldChange={field.onChange}
+                  mediaUrl={post?.imageUrl}
                 />
               </FormControl>
-              <FormMessage  className="shad-form_message"/>
+              <FormMessage className="shad-form_message" />
             </FormItem>
           )}
         />
@@ -105,9 +133,9 @@ const PostForm = ({ post }: PostFormProps) => {
             <FormItem>
               <FormLabel className="shad-form_label">Add Location</FormLabel>
               <FormControl>
-                <Input type='text' className='shad-input' {...field} />
+                <Input type="text" className="shad-input" {...field} />
               </FormControl>
-              <FormMessage  className="shad-form_message"/>
+              <FormMessage className="shad-form_message" />
             </FormItem>
           )}
         />
@@ -115,13 +143,20 @@ const PostForm = ({ post }: PostFormProps) => {
         <FormField
           control={form.control}
           name="tags"
-          render={({...field }) => (
+          render={({ field }) => (
             <FormItem>
-              <FormLabel className="shad-form_label">Add Tags (seperated by comma " , ")</FormLabel>
+              <FormLabel className="shad-form_label">
+                Add Tags (separated by comma " , ")
+              </FormLabel>
               <FormControl>
-                <Input type='text' className='shad-input' placeholder="Art, Expression, Learn" />
+                <Input
+                  placeholder="Art, Expression, Learn"
+                  type="text"
+                  className="shad-input"
+                  {...field}
+                />
               </FormControl>
-              <FormMessage  className="shad-form_message"/>
+              <FormMessage className="shad-form_message" />
             </FormItem>
           )}
         />
@@ -130,13 +165,15 @@ const PostForm = ({ post }: PostFormProps) => {
           <Button
             type="button"
             className="shad-button_dark_4"
-            >
+            onClick={() => navigate(-1)}>
             Cancel
           </Button>
           <Button
             type="submit"
             className="shad-button_primary whitespace-nowrap"
-            >
+            disabled={isLoadingCreate || isLoadingUpdate}>
+            {(isLoadingCreate || isLoadingUpdate) && <Loader />}
+            {action} Post
           </Button>
         </div>
       </form>
