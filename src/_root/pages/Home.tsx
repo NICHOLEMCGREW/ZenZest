@@ -1,10 +1,8 @@
 import { Models } from "appwrite";
 
 // import { useToast } from "@/components/ui/use-toast";
-import Loader from "@/components/shared/Loader"
-import PostCard from "@/components/shared/Loader"
+import { Loader, PostCard, UserCard } from "@/components/shared";
 import { useGetRecentPosts, useGetUsers } from "@/lib/react-query/queries";
-import UserCard from "@/components/shared/UserCard";
 
 const Home = () => {
   // const { toast } = useToast();

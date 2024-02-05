@@ -65,11 +65,10 @@ export const useGetPosts = () => {
 
       // Use the $id of the last document as the cursor.
       const lastId = lastPage.documents[lastPage?.documents.length - 1].$id;
-     
       return lastId;
-    }
-  })
-}
+    },
+  });
+};
 
 export const useSearchPosts = (searchTerm: string) => {
   return useQuery({
