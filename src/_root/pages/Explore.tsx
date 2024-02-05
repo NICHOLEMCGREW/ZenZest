@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { useInView } from "react-intersection-observer";
 
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui";
 import useDebounce from "@/hooks/useDebounce";
-import Loader from "@/components/shared/Loader";
-import GridPostList from "@/components/shared/GridPostList";
+import { GridPostList, Loader } from "@/components/shared";
 import { useGetPosts, useSearchPosts } from "@/lib/react-query/queries";
 
 export type SearchResultProps = {
@@ -31,7 +30,7 @@ const Explore = () => {
   const [searchValue, setSearchValue] = useState("");
   const debouncedSearch = useDebounce(searchValue, 500);
   const { data: searchedPosts, isFetching: isSearchFetching } = useSearchPosts(debouncedSearch);
- //infinate scroll
+
   useEffect(() => {
     if (inView && !searchValue) {
       fetchNextPage();
